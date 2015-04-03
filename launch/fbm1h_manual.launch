@@ -1,0 +1,52 @@
+<launch>
+
+	<group ns="fbm1h">
+
+		<rosparam file="$(find rockin_scoring)/config/fbm1h.yaml" command="load" />
+
+		<node name="world_map"
+			pkg="tf"
+			type="static_transform_publisher"
+			args="0 0 0 0 0 0 world map 100"
+		/>
+		
+		<node name="map_server"
+			pkg="map_server"
+			type="map_server"
+			args="$(find rockin_mocap)/config/fbm1_map.yaml"
+		/>
+	
+		<node name="mocap_node"
+			pkg="mocap_optitrack" 
+			type="mocap_node" 
+			respawn="false"
+			launch-prefix=""
+			required="true">
+			<rosparam file="$(find rockin_mocap)/config/fbm1_mocap.yaml" command="load" />
+		</node>
+
+		<node name="bmbox"
+			pkg="rockin_scoring"
+			type="fbm1_manual"
+			output="screen"
+			launch-prefix="gnome-terminal -e"
+		/>
+
+		<node pkg="rosbag"
+			type="record"
+			name="log_fbmh1"
+			args="record -o /home/rockin/logs/log_fbm1h_manual
+				--split --duration=1h
+				map
+				map_metadata
+				origin/pose
+				origin/pose2d
+				ref_board/pose
+				ref_board/pose2d
+				info
+				/tf
+				/rosout"
+		/>
+
+	</group>    
+</launch>

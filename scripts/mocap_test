@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+import sys
+import os
+import getopt
+import threading
+from time import gmtime, strftime
+
+import roslib
+import rospy
+import math
+import tf
+import geometry_msgs.msg
+
+origin_trans = [0, 0, 0]
+origin_rot = [0, 0, 0, 1]
+
+class colors:
+	INPUT = '\033[96m'
+	INFO = '\033[92m'
+	WARN = '\033[93m'
+	FAIL = '\033[91m'
+	END = '\033[0m'
+	
+def _static_transform_publisher():
+	global origin_trans
+	global origin_rot
+
+	r = rospy.Rate(10)
+	br = tf.TransformBroadcaster()
+	
+	while not rospy.is_shutdown():
+		br.sendTransform(origin_trans,	origin_rot, rospy.Time.now(), "origin", "world")
+		r.sleep()
+
+	
+def main():
+	global origin_trans
+	global origin_rot
+
+	rospy.init_node("mocap_test")
+	
+	listener = tf.TransformListener()
+	br = tf.TransformBroadcaster()
+
+	a = raw_input(colors.INPUT + "Align the reference board to the origin and press ENTER" + colors.END)
+	
+	try:
+		(origin_trans, origin_rot) = listener.lookupTransform("/world", "/ref_board", rospy.Time(0))
+		origin_euler = tf.transformations.euler_from_quaternion(origin_rot)
+		
+	except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+		print colors.FAIL + "Reference board not visible" + colors.END
+		sys.exit()	
+
+	print colors.INFO + "Origin acquired" + colors.END
+	print "X: %2.5f\tY: %2.5f\tZ: %2.5f\tW: %3.2f" % (origin_trans[0], origin_trans[1], origin_trans[2], origin_euler[2] * 57.2957795)
+	
+	static_transform_thread = threading.Thread(name='static_transform_publisher', target=_static_transform_publisher)
+	static_transform_thread.start()
+
+	a = raw_input(colors.INPUT + "Place the reference board and press ENTER" + colors.END)
+	
+	try:
+		(ref_trans, ref_rot) = listener.lookupTransform("/origin", "/ref_board", rospy.Time(0))
+		ref_euler = tf.transformations.euler_from_quaternion(ref_rot)
+		
+	except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+		print colors.FAIL + "Reference board not visible" + colors.END
+		sys.exit()	
+
+	print colors.INFO + "Reference board acquired" + colors.END
+	print "X: %2.5f\tY: %2.5f\tZ: %2.5f\tW: %3.2f" % (ref_trans[0], ref_trans[1], ref_trans[2], ref_euler[2] * 57.2957795)
+	
+	
+
+if __name__ == '__main__':
+	main()
+

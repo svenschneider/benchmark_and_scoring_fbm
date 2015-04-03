@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+import time
+import yaml
+
+from rockin_benchmarking.RefBox import RefBox
+
+benchmark = RefBox()
+
+# Wait for client
+benchmark.WaitClient()
+
+while (benchmark.Running()):
+	# Check if a manual operation was requested
+	request = benchmark.RequestedManualOperation()
+	if request:
+		print "-> MANUAL OPERATION REQUESTED: %s" % request
+		time.sleep(1)
+		# Notify manual operation execution
+		benchmark.ConfirmManualOperation()
+		
+	time.sleep(1)
+	
+# Wait for score from the bmbox
+score_yaml = benchmark.GetScore()
+score = yaml.load(score_yaml)
+
+# display the score somewhere
+print "<- RECEIVED SCORE"
+if score:
+	for field in score:
+		print "%s: %s" % (field, score[field])
+
+benchmark.End()
+

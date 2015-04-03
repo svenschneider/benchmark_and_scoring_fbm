@@ -1,0 +1,128 @@
+#!/usr/bin/env python
+import Levenshtein
+import random
+import time
+import yaml
+
+# ROS imports
+import rospy
+from rockin_benchmarking.BmBox import BmBox
+
+# Benchmark runs
+BENCHMARK_RUNS = 1
+
+# Switches
+EASY_SWITCHES_LIST = [1, 2, 4, 5, 6]
+HARD_SWITCHES_LIST = [3, 7, 8, 9, 10]
+NON_CONFIGURABLE_SWITCHES_LIST = [2, 10]
+
+# Switches to actuate for each run
+EASY_SWITCHES_TO_OPERATE = 5
+HARD_SWITCHES_TO_OPERATE = 5
+
+def main():
+
+	# Init benchmarking node
+	benchmark = BmBox()
+	rospy.loginfo("FBM2H benchmarking node started")
+	
+	# Variables to compute score
+	runs = 0
+	score_sum = 0
+	damaged_switches_sum = 0
+	execution_time = 0.0
+
+	# Wait for client
+	benchmark.WaitClient()
+
+	# Start the benchmark
+	while benchmark.Running() and (runs < BENCHMARK_RUNS):
+		runs = runs + 1
+	
+		initial_state = []
+		switches = []
+		
+		for i in EASY_SWITCHES_LIST:
+			if i in NON_CONFIGURABLE_SWITCHES_LIST:
+				initial_state.append(0)
+			else:
+				initial_state.append(random.randint(0, 1))
+		
+		for i in HARD_SWITCHES_LIST:
+			if i in NON_CONFIGURABLE_SWITCHES_LIST:
+				initial_state.append(0)
+			else:
+				initial_state.append(random.randint(0, 1))
+
+		rospy.loginfo("Switches initial state: %s" % initial_state)
+		
+		easy_switches = random.sample(EASY_SWITCHES_LIST, EASY_SWITCHES_TO_OPERATE)
+		hard_switches = random.sample(HARD_SWITCHES_LIST, HARD_SWITCHES_TO_OPERATE)
+		switches = easy_switches + hard_switches
+		
+		rospy.loginfo("Switches to operate: %s" % switches)
+		
+		# Request manual operation to the refbox
+		benchmark.ManualOperation("Prepare switches with this configuration: %s " % initial_state)
+
+		if not benchmark.Running():
+			break
+		
+		# Fill goal
+		goal = {
+			'initial_state': initial_state,
+			'switches': switches
+		},
+
+		# Send goal to client
+		goal_yaml = yaml.dump(goal)
+		benchmark.SendGoal(goal_yaml)
+		start_time = time.time()
+
+		# Wait for result from client
+		result_yaml = benchmark.WaitResult()
+		end_time = time.time()
+		
+		if benchmark.Timeout():
+			execution_time = execution_time + (end_time - start_time)
+			continue
+
+		if not benchmark.Running():
+			break
+
+		result = yaml.load(result_yaml)
+
+		rospy.loginfo("Received result - Operated switches: %s, damaged switches: %d"
+		% (result['switches'], result['damaged_switches']))
+		
+		# Evaluate score
+		score = Levenshtein.distance("".join("{0}".format(n) for n in switches), "".join("{0}".format(n) for n in result['switches']))
+		rospy.loginfo("Partial score: %f", score)
+		score_sum = score_sum + score		
+
+		# Damaged switches
+		damaged_switches_sum = damaged_switches_sum + result['damaged_switches']
+
+		# Evaluate execution time
+		execution_time = execution_time + (end_time - start_time)
+
+	# Evaluate final score
+	final_score = {
+		'runs': runs,
+		'score': score_sum,
+		'damaged_switches': damaged_switches_sum,
+		'execution_time': execution_time
+	}
+	
+	final_score_yaml = yaml.dump(final_score)
+	benchmark.SendScore(final_score_yaml)
+	
+	# Benchmark concluded
+	benchmark.End()
+
+	print score
+	time.sleep(10)
+				
+if __name__ == '__main__':
+	main()
+

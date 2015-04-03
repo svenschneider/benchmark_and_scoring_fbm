@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+import random
+import time
+import yaml
+
+import rospy
+from rockin_benchmarking.Client import Client
+
+benchmark = Client("client_test")
+
+# Get items	to generate random results
+items = rospy.get_param('items')
+random.seed(time.clock())
+
+# Connect to the refbox (check time sync, etc)
+benchmark.Connect()
+rospy.loginfo("FBM1H client test node started")
+
+
+while (benchmark.Running()):
+	# Get the goal (encoded as YAML string)
+	goal_yaml = benchmark.RequestGoal()
+	goal = yaml.load(goal_yaml)
+
+	print "<- RECEIVED GOAL"
+	
+	# Execute the benchmark...
+	time.sleep(5)
+	item = random.choice(items)
+	result = {
+		'item_class': item['class'],
+		'item_instance': item['instance'],
+		'x': 0.5,
+		'y': 0.2,
+		'theta': 10
+	}
+	
+	print "-> SENDING RESULT"
+	for field in result:
+		print "%s: %s" % (field, result[field])
+	
+	# Convert result to YAML string
+	result_yaml = yaml.dump(result)
+	benchmark.SendResult(result_yaml)
+

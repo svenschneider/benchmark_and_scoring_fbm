@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import time
+import yaml
+
+import rospy
+from rockin_benchmarking.Client import Client
+
+benchmark = Client("fbm2h_client_test")
+rospy.loginfo("FBM2H client test node started")
+
+# Connect to the refbox (check time sync, etc)
+benchmark.Connect()
+
+while (benchmark.Running()):
+
+	# Get the goal (encoded as YAML string)
+	goal_yaml = benchmark.RequestGoal()
+	goal = yaml.load(goal_yaml)
+
+	print "<- RECEIVED GOAL"
+	print goal
+	
+	# Execute the benchmark...
+	time.sleep(2)
+	
+	# Send benchmark result (FBM2@HOME benchmark result is actually filled by the referee box)
+	print "enter operated switches"
+	s = raw_input()
+	switches = map(int, s.split())
+
+	print "enter number of damaged switches"
+	damaged_switches = int(raw_input())
+	
+	result = {
+		'switches' : switches,
+		'damaged_switches' : damaged_switches	
+	}
+	result_yaml = yaml.dump(result)
+	
+	benchmark.SendResult(result_yaml)

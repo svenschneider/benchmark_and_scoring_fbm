@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+
+import time
+import yaml
+
+from rockin_benchmarking.BmBox import BmBox
+
+goals = (
+	{
+		'initial_state': (0, 1, 0, 1, 1, 0, 1, 0, 0, 1),
+		'switches': (4, 3, 1, 7, 8)	
+	},
+	{
+		'initial_state': (0, 1, 1, 0, 1, 0, 1, 0, 0, 1),
+		'switches': (5, 1, 7, 2, 3, 4)	
+	},
+	{
+		'initial_state': (0, 1, 1, 0, 1, 0, 0, 1, 0, 1),
+		'switches': (1, 5, 2, 7)	
+	},
+)
+
+benchmark = BmBox()
+
+# Wait for client
+benchmark.WaitClient()
+
+for goal in goals:
+	# Request manual operation to the refbox
+	benchmark.ManualOperation("Prepare switches with this configuration: " + str(goal['initial_state']))
+	
+	# Send goal to client
+	print "-> SENDING GOAL"
+	for field in goal:
+		print "%s: %s" % (field, goal[field])
+	
+	goal_yaml = yaml.dump(goal)
+	benchmark.SendGoal(goal_yaml)
+
+	# Wait for result from client
+	benchmark.WaitResult() # FBM2@HOME BENCHMARK HAS NO RESULTS FROM THE CLIENT
+#	result_yaml = benchmark.WaitResult()
+#	result = yaml.load(result_yaml)
+	
+#	print "<- RECEIVED RESULT"
+#	if result:
+#		for field in result:
+#			print "%s: %s" % (field, result[field])
+
+# Evaluate score
+time.sleep(1)
+
+benchmark.SendScore(str(82))
+
+benchmark.End()
+

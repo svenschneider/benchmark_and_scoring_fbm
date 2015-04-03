@@ -1,0 +1,52 @@
+items:
+- class: mugs
+  id: 1
+  instance: black_mug
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: mugs
+  id: 2
+  instance: white_mug
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: mugs
+  id: 3
+  instance: coffee_mug
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: mugs
+  id: 4
+  instance: black_jug
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: cutlery
+  id: 5
+  instance: fork
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: cutlery
+  id: 6
+  instance: knife
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: boxes
+  id: 7
+  instance: yellow_box
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: boxes
+  id: 8
+  instance: pink_box
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: picture_frames
+  id: 9
+  instance: gold_frame
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: picture_frames
+  id: 10
+  instance: black_frame
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+

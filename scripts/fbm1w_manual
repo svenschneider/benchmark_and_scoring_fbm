@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+import math
+import time
+
+# ROS imports
+import rospy
+import tf
+
+# Ground truth accuracy
+TRANS_ACCURACY = 0.005 # meters
+ROT_ACCURACY = 2.0 # degrees
+
+def main():
+
+	rospy.init_node("fbm1w_manual")
+	
+	# init tf
+	listener = tf.TransformListener()
+	br = tf.TransformBroadcaster()
+
+	# Get items
+	items = rospy.get_param('/fbm1w/items')
+
+	# Variables to compute score
+	runs = 0
+	class_positives = 0.0
+	instance_positives = 0.0
+	pose_score_sum = 0.0
+	execution_time = 0.0
+
+	# Start the benchmark
+	while len(items):
+		runs = runs + 1
+
+		# Input the item that was placed on the table
+		while True:
+			try:
+				item_id = int(raw_input("Enter the item ID and press ENTER: "))
+				break
+			except (ValueError, NameError):
+				print("Numbers only please!")
+
+		# Pick the item from the list
+		item = items[item_id]
+
+		start_time = time.time()
+		
+		# Look for the ref board
+		ref_board_visible = False
+		while (not ref_board_visible):
+			try:
+				listener.lookupTransform("/origin", "/ref_board", rospy.Time(0))
+				ref_board_visible = True
+
+			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+				rospy.logdebug("Reference board not visible")
+				time.sleep(1)
+				ref_board_visible = False
+		
+		# Wait run end
+		raw_input("Press ENTER when the run ends")
+		
+		end_time = time.time()
+		
+		# Get item pose
+		now = rospy.Time.now()
+		br.sendTransform(item['trans'], item['rot'], now, "item", "ref_board")
+		time.sleep(0.5)
+		
+		listener.waitForTransform("/origin", "/item", now, rospy.Duration(2.0))
+		
+		(trans, rot) = listener.lookupTransform("/origin", "/item", rospy.Time(0))		
+		euler = tf.transformations.euler_from_quaternion(rot)
+
+		# Log item pose
+		rospy.loginfo("Item acquired  - X: %2.5f\tY: %2.5f\tW: %3.2f"
+			% (trans[0], trans[1], euler[2] * 180 / math.pi))
+
+		# Evaluate execution time
+		execution_time = execution_time + (end_time - start_time)
+
+	# Log total execution time
+	rospy.loginfo("Execution time: %d" % execution_time)
+
+	time.sleep(10)
+				
+if __name__ == '__main__':
+	main()
+	

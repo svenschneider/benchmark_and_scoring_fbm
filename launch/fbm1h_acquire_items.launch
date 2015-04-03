@@ -1,0 +1,20 @@
+<launch>
+
+	<group ns="fbm1h">
+
+		<rosparam file="$(find rockin_scoring)/config/fbm1h.yaml" command="load" />
+
+		<node pkg="mocap_optitrack" 
+			type="mocap_node" 
+			name="mocap_node" 
+			respawn="false"
+			launch-prefix=""
+			required="true">
+			<rosparam file="$(find rockin_mocap)/config/fbm1_mocap.yaml" command="load" />
+		</node>
+
+		<node name="acquire_items" pkg="rockin_scoring" type="acquire_items" output="screen" launch-prefix="gnome-terminal -e">
+		</node>
+		
+	</group>    
+</launch>

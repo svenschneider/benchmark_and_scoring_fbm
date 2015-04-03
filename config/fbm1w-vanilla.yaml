@@ -1,0 +1,42 @@
+items:
+- class: trays
+  id: 1
+  instance: black_tray
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: trays
+  id: 2
+  instance: orange_tray
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: flanges
+  id: 3
+  instance: trapezoidal_flange
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: flanges
+  id: 4
+  instance: rectangular_flange
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: rotating_parts
+  id: 5
+  instance: shaft
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: rotating_parts
+  id: 6
+  instance: ball_bearing
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: others
+  id: 7
+  instance: cilinder
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+- class: others
+  id: 8
+  instance: irregular
+  rot: [0, 0, 0, 1]
+  trans: [0, 0, 0]
+
