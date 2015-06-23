@@ -3,7 +3,7 @@
 import time
 import yaml
 
-from rockin_benchmarking.RefBox import RefBox
+from rockin_scoring.RefBox import RefBox
 
 benchmark = RefBox()
 

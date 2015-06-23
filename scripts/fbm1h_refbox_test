@@ -4,7 +4,7 @@ import time
 import yaml
 
 import rospy
-from rockin_benchmarking.RefBox import RefBox
+from rockin_scoring.RefBox import RefBox
 
 benchmark = RefBox("refbox_test")
 rospy.loginfo("FBM1H refbox test node started")
