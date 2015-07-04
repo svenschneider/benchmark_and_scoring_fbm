@@ -10,7 +10,7 @@ import tf
 from rockin_benchmarking.BmBox import BmBox
 
 # Benchmark runs
-BENCHMARK_RUNS = 10
+BENCHMARK_RUNS = 3
 
 # Testbed size
 SIZE_X = 1
@@ -67,7 +67,7 @@ def main():
 			break
 
 		# Look for the ref board
-		ref_board_visible = False
+		ref_board_visible = True
 		while (not ref_board_visible):
 			try:
 				listener.lookupTransform("/origin", "/ref_board", rospy.Time(0))
@@ -113,6 +113,7 @@ def main():
 			instance_positives = instance_positives + 1
 			print ("instance_positives = %d" % instance_positives)
 
+		'''
 		# Evaluate position error
 		now = rospy.Time.now()
 		br.sendTransform(item['trans'], item['rot'], now, "item", "ref_board")
@@ -153,6 +154,7 @@ def main():
 		pose_score_sum = pose_score_sum + pose_score
 
 		rospy.loginfo("Position score - %f (%f | %f)" % (pose_score, 1 - pose_err_trans, 1 - pose_err_rot))
+		'''
 		
 		# Evaluate execution time
 		execution_time = execution_time + (end_time - start_time)

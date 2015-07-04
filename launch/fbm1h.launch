@@ -4,51 +4,10 @@
 
 		<rosparam file="$(find rockin_scoring)/config/fbm1h.yaml" command="load" />
 
-		<node name="world_map"
-			pkg="tf"
-			type="static_transform_publisher"
-			args="0 0 0 0 0 0 world map 100"
-		/>
-		
-		<node name="map_server"
-			pkg="map_server"
-			type="map_server"
-			args="$(find rockin_mocap)/config/map_fbm.yaml"
-		/>
-	
-		<node name="mocap"
-			pkg="mocap_optitrack"
-			type="mocap_node"
-			respawn="false"
-			launch-prefix=""
-			required="true">
-			<rosparam file="$(find rockin_mocap)/config/fbm1_mocap.yaml" command="load" />
-		</node>
-
 		<node name="benchmark"
 			pkg="rockin_scoring"
 			type="fbm1h"
 			output="screen"
-			launch-prefix="gnome-terminal -e"
-		/>
-
-		<node name="record"
-			pkg="rosbag"
-			type="record"
-			args="record -o /home/rockin/logs/log_fbm1h
-				--split --duration=1h
-				/fbm1h/bmbox_state
-				/fbm1h/client_state
-				/fbm1h/refbox_state
-				/fbm1h/map
-				/fbm1h/map_metadata
-				/fbm1h/origin/pose
-				/fbm1h/origin/pose2d
-				/fbm1h/ref_board/pose
-				/fbm1h/ref_board/pose2d
-				/fbm1h/info
-				/tf
-				/rosout"
 		/>
 
 	</group>    
