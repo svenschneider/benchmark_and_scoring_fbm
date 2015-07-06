@@ -4,7 +4,7 @@ import time
 import yaml
 
 import rospy
-from rockin_benchmarking.Client import Client
+from rockin_scoring.Client import Client
 
 benchmark = Client("fbm2h_client_test")
 rospy.loginfo("FBM2H client test node started")

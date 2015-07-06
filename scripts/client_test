@@ -3,7 +3,7 @@
 import time
 import yaml
 
-from rockin_benchmarking.Client import Client
+from rockin_scoring.Client import Client
 
 benchmark = Client()
 

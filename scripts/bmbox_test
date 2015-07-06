@@ -3,7 +3,7 @@
 import time
 import yaml
 
-from rockin_benchmarking.BmBox import BmBox
+from rockin_scoring.BmBox import BmBox
 
 goals = (
 	{

@@ -1,7 +1,7 @@
 from threading import Condition, Lock, Thread
 
 import rospy
-from rockin_benchmarking.msg import BmBoxState, RefBoxState, ClientState
+from rockin_scoring.msg import BmBoxState, RefBoxState, ClientState
 from FSM import FSM
 
 

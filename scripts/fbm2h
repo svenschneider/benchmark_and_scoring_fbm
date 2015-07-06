@@ -6,7 +6,7 @@ import yaml
 
 # ROS imports
 import rospy
-from rockin_benchmarking.BmBox import BmBox
+from rockin_scoring.BmBox import BmBox
 
 # Benchmark runs
 BENCHMARK_RUNS = 1
