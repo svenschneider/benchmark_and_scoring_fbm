@@ -39,7 +39,10 @@ class BmBox:
 
 		if (self._refbox_state == RefBoxState.EXECUTING_GOAL) and (self._fsm.state() == BmBoxState.WAITING_MANUAL_OPERATION):
 			self._fsm.update(BmBoxState.COMPLETED_MANUAL_OPERATION)
-			
+
+		if (self._refbox_state == RefBoxState.END) and (self._fsm.state() == BmBoxState.WAITING_MANUAL_OPERATION):
+			self._fsm.update(BmBoxState.READY)
+		
 		if self._refbox_state == RefBoxState.RECEIVED_SCORE:
 			self._fsm.update(BmBoxState.END)
 
@@ -61,13 +64,15 @@ class BmBox:
 		self._fsm.update(BmBoxState.WAITING_CLIENT)
 		self._fsm.wait_transition(BmBoxState.WAITING_CLIENT, BmBoxState.READY)
 		
-	def ManualOperation(self, message):
+	def ManualOperation(self, message=None):
 		rospy.logdebug("BmBox.ManualOperation()")
 		
 		if not self._fsm.check_state(BmBoxState.READY):	 return
 		
 		self._fsm.update(BmBoxState.WAITING_MANUAL_OPERATION, message)
 		self._fsm.wait_transition(BmBoxState.WAITING_MANUAL_OPERATION, None)
+		
+		return self._refbox_payload
 	
 	def SendGoal(self, goal = None):
 		rospy.logdebug("BmBox.SendGoal()")
@@ -128,7 +133,7 @@ class BmBox:
 				(BmBoxState.WAITING_CLIENT, BmBoxState.END), # allowed transitions from BmBoxState.START
 				(BmBoxState.READY, BmBoxState.END), # allowed transitions from BmBoxState.WAITING_CLIENT
 				(BmBoxState.WAITING_MANUAL_OPERATION, BmBoxState.TRANSMITTING_GOAL, BmBoxState.TRANSMITTING_SCORE, BmBoxState.END), # allowed transitions from BmBoxState.READY
-				(BmBoxState.COMPLETED_MANUAL_OPERATION, BmBoxState.END), # allowed transitions from BmBoxState.WAITING_MANUAL_OPERATION
+				(BmBoxState.COMPLETED_MANUAL_OPERATION, BmBoxState.READY, BmBoxState.END), # allowed transitions from BmBoxState.WAITING_MANUAL_OPERATION
 				(BmBoxState.TRANSMITTING_GOAL, BmBoxState.END), # allowed transitions from BmBoxState.COMPLETED_MANUAL_OPERATION
 				(BmBoxState.EXECUTING_GOAL, BmBoxState.END), # allowed transitions from BmBoxState.TRANSMITTING_GOAL
 				(BmBoxState.WAITING_RESULT, BmBoxState.READY, BmBoxState.END), # allowed transitions from BmBoxState.EXECUTING_GOAL
