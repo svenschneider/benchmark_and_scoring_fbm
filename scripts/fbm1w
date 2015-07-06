@@ -1,0 +1,181 @@
+#!/usr/bin/env python
+import math
+import random
+import time
+import yaml
+
+# ROS imports
+import rospy
+import tf
+from rockin_scoring.BmBox import BmBox
+
+# Benchmark runs
+BENCHMARK_RUNS = 10
+
+# Testbed size
+SIZE_X = 1
+SIZE_Y = 1
+
+# Ground truth accuracy
+TRANS_ACCURACY = 0.0 # meters
+ROT_ACCURACY = 0.0 # degrees
+
+def main():
+
+	# Init benchmarking node
+	benchmark = BmBox()
+	rospy.loginfo("FBM1W benchmarking node started")
+	
+	# init tf
+	listener = tf.TransformListener()
+	br = tf.TransformBroadcaster()
+
+	# Get items
+	items = rospy.get_param('items')
+	
+	# Variables to compute score
+	runs = 0
+	class_positives = 0.0
+	instance_positives = 0.0
+	pose_score_sum = 0.0
+	execution_time = 0.0
+	
+	# Maximum pose error
+	max_pose_error = math.sqrt(math.pow(SIZE_X, 2) + math.pow(SIZE_Y, 2))
+
+	# Wait for client
+	benchmark.WaitClient()
+
+	# Start the benchmark
+	while benchmark.Running():
+		runs = runs + 1
+		
+		# Wait for item_id from the refbox
+		print "Wait for item_instance from the CFH"
+		item_instance = benchmark.ManualOperation()
+		
+		if not benchmark.Running(): break
+		
+		print "Item: %s" % (item_instance)
+
+		# Pick the item from the list
+		item = [x for x in items if x['instance'] == item_instance][0]
+		
+		
+		print item_instance
+		print item
+
+		# Look for the ref board
+		ref_board_visible = False
+		while (not ref_board_visible):
+			try:
+				listener.lookupTransform("/origin", "/ref_board", rospy.Time(0))
+				ref_board_visible = True
+
+			except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+				rospy.logdebug("Reference board not visible")
+				time.sleep(1)
+				ref_board_visible = False
+				
+		# Send goal
+		benchmark.SendGoal()
+		start_time = time.time()
+		
+		# Wait for result from client
+		result_yaml = benchmark.WaitResult()
+		end_time = time.time()
+		
+		if benchmark.Timeout():
+			print "TIMEOUT"
+			execution_time = execution_time + (end_time - start_time)
+			continue
+
+		if not benchmark.Running():
+			print "NOT RUNNING"
+			continue
+		
+		result = yaml.load(result_yaml)
+		
+		rospy.loginfo("Received result - Class: %s\tInstance: %s\tX: %f\tY: %f\tW: %f"
+			% (result['item_class'], result['item_instance'], result['x'], result['y'], result['theta']))
+		
+		result_trans = (result['x'], result['y'], 0)
+		result_rot = tf.transformations.quaternion_from_euler(0, 0, result['theta'] * math.pi / 180)
+		
+		# Evaluate class
+		if (result['item_class'] == item['class']):
+			class_positives = class_positives + 1
+			print ("class_positives = %d" % class_positives)
+		
+		# Evaluate instance
+		if (result['item_instance'] == item['instance']):
+			instance_positives = instance_positives + 1
+			print ("instance_positives = %d" % instance_positives)
+
+		# Evaluate position error
+		now = rospy.Time.now()
+		br.sendTransform(item['trans'], item['rot'], now, "item", "ref_board")
+		time.sleep(0.5)
+		br.sendTransform(result_trans, result_rot, now, "result_%d" % runs, "origin")
+		time.sleep(0.5)
+		
+		listener.waitForTransform("/origin", "/item", now, rospy.Duration(2.0))
+		
+		(trans, rot) = listener.lookupTransform("/origin", "/item", rospy.Time(0))		
+		euler = tf.transformations.euler_from_quaternion(rot)
+		
+		x_err = result['x'] - trans[0]
+		y_err = result['y'] - trans[1]
+		w_err = (result['theta'] - euler[2] * 180 / math.pi)
+
+		if w_err > 180: w_err = w_err - 360
+		if w_err < -180: w_err = w_err + 360
+
+		rospy.loginfo("Item received  - X: %2.5f\tY: %2.5f\tW: %3.2f"
+			% (result_trans[0], result_trans[1], result['theta']))
+		rospy.loginfo("Item acquired  - X: %2.5f\tY: %2.5f\tW: %3.2f"
+			% (trans[0], trans[1], euler[2] * 180 / math.pi))
+		rospy.loginfo("Error measured - X: %2.5f\tY: %2.5f\tW: %3.2f"
+			% (x_err, y_err, w_err))
+	
+		if abs(x_err) < TRANS_ACCURACY : x_err = 0
+		if abs(y_err) < TRANS_ACCURACY : y_err = 0
+		if abs(w_err) < ROT_ACCURACY : w_err = 0
+
+		pose_err_trans = math.sqrt(math.pow(x_err, 2) + math.pow(y_err, 2))
+		if pose_err_trans > max_pose_error : pose_err_trans = 1
+
+		pose_err_rot = abs(w_err) / 180
+		if pose_err_rot > 1 : pose_err_rot = 1
+		
+		pose_score = 1 - (pose_err_trans / 2) - (pose_err_rot / 2)
+		pose_score_sum = pose_score_sum + pose_score
+
+		rospy.loginfo("Position score - %f (%f | %f)" % (pose_score, 1 - pose_err_trans, 1 - pose_err_rot))
+		
+		# Evaluate execution time
+		execution_time = execution_time + (end_time - start_time)
+
+		rospy.loginfo("Execution time - %f" % execution_time)
+
+	# Evaluate final score
+	score = {
+		'class_accuracy': class_positives / runs,
+		'instance_accuracy': instance_positives / runs,
+		'pose_score': pose_score_sum / runs,
+		'execution_time': execution_time
+
+	}
+	
+	score_yaml = yaml.dump(score)
+	benchmark.SendScore(score_yaml)
+	
+	# Benchmark concluded
+	benchmark.End()
+
+	print score
+	time.sleep(10)
+				
+if __name__ == '__main__':
+	main()
+	
