@@ -2,53 +2,12 @@
 
 	<group ns="fbm1w">
 
-		<rosparam file="$(find rockin_scoring)/config/fbm1w.yaml" command="load" />
-
-		<node name="world_map"
-			pkg="tf"
-			type="static_transform_publisher"
-			args="0 0 0 0 0 0 world map 100"
-		/>
-		
-		<node name="map_server"
-			pkg="map_server"
-			type="map_server"
-			args="$(find rockin_mocap)/config/fbm1_map.yaml"
-		/>
-	
-		<node name="mocap"
-			pkg="mocap_optitrack"
-			type="mocap_node"
-			respawn="false"
-			launch-prefix=""
-			required="true">
-			<rosparam file="$(find rockin_mocap)/config/fbm1_mocap.yaml" command="load" />
-		</node>
+        <rosparam file="$(find rockin_scoring)/config/fbm1w.yaml" command="load" />
 
 		<node name="benchmark"
 			pkg="rockin_scoring"
 			type="fbm1w"
 			output="screen"
-			launch-prefix="gnome-terminal -e"
-		/>
-
-		<node name="record"
-			pkg="rosbag"
-			type="record"
-			args="record -o /home/rockin/logs/log_fbm1w
-				--split --duration=1h
-				/fbm1w/bmbox_state
-				/fbm1w/client_state
-				/fbm1w/refbox_state
-				/fbm1w/map
-				/fbm1w/map_metadata
-				/fbm1w/origin/pose
-				/fbm1w/origin/pose2d
-				/fbm1w/ref_board/pose
-				/fbm1w/ref_board/pose2d
-				/fbm1w/info
-				/tf
-				/rosout"
 		/>
 
 	</group>    
